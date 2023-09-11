@@ -16,39 +16,76 @@ class App extends StatelessWidget {
   }
 }
 
-class Model extends ChangeNotifier {
-  var one = 0;
-  var two = 0;
+class Model {
+  final int one;
+  final int two;
 
-  void inc1() {
-    one++;
-    notifyListeners();
+  Model({
+    required this.one,
+    required this.two,
+  });
+
+  Model copyWith({
+    int? one,
+    int? two,
+  }) =>
+      Model(
+        one: one ?? this.one,
+        two: two ?? this.two,
+      );
+
+  @override
+  String toString() => "Model(one: $one, two: $two)";
+
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is Model && other.one == one && other.two == two;
   }
 
-  void inc2() {
-    two++;
-    notifyListeners();
-  }
+  @override
+  int get hashCode => one.hashCode ^ two.hashCode;
 }
 
-class ExampleWidget extends StatelessWidget {
+class ExampleWidget extends StatefulWidget {
   const ExampleWidget({Key? key}) : super(key: key);
 
   @override
+  State<ExampleWidget> createState() => _ExampleWidgetState();
+}
+
+class _ExampleWidgetState extends State<ExampleWidget> {
+  var model = Model(one: 0, two: 0);
+
+  void inc1() {
+    model = model.copyWith(one: model.one + 1);
+    setState(() {});
+  }
+
+  void inc2() {
+    model = model.copyWith(two: model.two + 1);
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => Model(),
-      child: const View(),
+    return Provider.value(
+      value: this,
+      child: Provider.value(
+        value: Model(one: model.one + 1, two: model.two),
+        child: const _View(),
+      ),
     );
   }
 }
 
-class View extends StatelessWidget {
-  const View({Key? key}) : super(key: key);
+class _View extends StatelessWidget {
+  const _View({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final model = context.read<Model>();
+    final state = context.read<_ExampleWidgetState>();
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -56,11 +93,11 @@ class View extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
-                onPressed: model.inc1,
+                onPressed: state.inc1,
                 child: const Text("one"),
               ),
               ElevatedButton(
-                onPressed: model.inc2,
+                onPressed: state.inc2,
                 child: const Text("two"),
               ),
               ElevatedButton(
